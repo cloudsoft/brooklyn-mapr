@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 
 import brooklyn.entity.Entity
 import brooklyn.entity.basic.Lifecycle;
-import brooklyn.entity.basic.SoftwareProcessEntity
+import brooklyn.entity.basic.SoftwareProcessImpl
 import brooklyn.entity.trait.Startable;
 import brooklyn.event.basic.BasicAttributeSensor;
 import brooklyn.event.basic.BasicConfigKey;
@@ -20,23 +20,21 @@ import brooklyn.location.NoMachinesAvailableException
 import brooklyn.location.basic.SshMachineLocation
 import brooklyn.location.basic.jclouds.templates.PortableTemplateBuilder
 
-abstract class AbstractM3Node extends SoftwareProcessEntity implements Startable {
+public abstract class AbstractM3NodeImpl extends SoftwareProcessImpl implements AbstractM3Node {
 
-    public static final Logger log = LoggerFactory.getLogger(AbstractM3Node.class);
+    public static final Logger log = LoggerFactory.getLogger(AbstractM3NodeImpl.class);
 
-    public static BasicConfigKey<DiskSetupSpec> DISK_SETUP_SPEC = [ DiskSetupSpec, "mapr.node.disk.setup", "" ];
-    public static final BasicAttributeSensor<Boolean> ZOOKEEPER_UP = [ Boolean, "mapr.zookeeper.serviceUp", "whether zookeeper has been started" ];
-    
-    public AbstractM3Node(Entity owner) { this([:], owner) }
-    public AbstractM3Node(Map properties=[:], Entity owner=null) {
-        super(properties, owner)
+    public AbstractM3NodeImpl(Map properties=[:], Entity parent=null) {
+        super(properties, parent)
 
         setAttribute(SERVICE_UP, false)
         setAttribute(SERVICE_STATE, Lifecycle.CREATED)
     }
     
+    @Override
     public boolean isZookeeper() { return false; }
     
+    @Override
     public List<String> getAptPackagesToInstall() {
         List<String> result = [ "mapr-fileserver", "mapr-tasktracker" ];
         if (isZookeeper()) result << "mapr-zookeeper";
@@ -53,9 +51,12 @@ abstract class AbstractM3Node extends SoftwareProcessEntity implements Startable
         return (M3NodeDriver) super.getDriver();
     }
         
+    @Override
     protected Map<String,Object> getProvisioningFlags(MachineProvisioningLocation location) {
         obtainProvisioningFlags(location);
     }
+    
+    @Override
     protected Map<String,Object> obtainProvisioningFlags(MachineProvisioningLocation location) {
         Map flags = [:]; //super.obtainProvisioningFlags(location); 
         flags.templateBuilder = new PortableTemplateBuilder().
@@ -71,6 +72,7 @@ abstract class AbstractM3Node extends SoftwareProcessEntity implements Startable
         return flags;        
     }
     
+    @Override
     public abstract void runMaprPhase2();
     
 }
